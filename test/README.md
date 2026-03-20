@@ -94,48 +94,74 @@ curl http://localhost:8080/readyz
 ### 1. 创建知识库
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/kbs \
+KB_ID=$(
+  curl -s -X POST http://localhost:8080/api/v1/kbs \
   -H 'Content-Type: application/json' \
   -d '{
     "name": "manual-test-kb",
     "description": "manual validation kb"
-  }'
+  }' | jq -r '.data.id'
+)
 ```
 
-记录返回里的知识库 `id`，下文记为 `KB_ID`。
+确认 `KB_ID` 已拿到真实 UUID：
+
+```bash
+echo "$KB_ID"
+```
 
 ### 2. 导入测试文档
 
 把 `test/manual_kb/launch_checklist.md` 和 `test/manual_kb/ops_notes.txt` 的内容分别作为 `content` 导入。
+不要直接把 `$(cat file)` 塞进 JSON 字符串，优先用 `jq` 生成请求体。
 
 示例：
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/kbs/KB_ID/documents \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"title\": \"launch_checklist.md\",
-    \"source_type\": \"markdown\",
-    \"content\": \"$(cat test/manual_kb/launch_checklist.md)\"
-  }"
+DOC_ID_1=$(
+  jq -n \
+    --arg title "launch_checklist.md" \
+    --arg source_type "markdown" \
+    --arg content "$(cat test/manual_kb/launch_checklist.md)" \
+    '{
+      title: $title,
+      source_type: $source_type,
+      content: $content
+    }' | \
+  curl -s -X POST http://localhost:8080/api/v1/kbs/$KB_ID/documents \
+    -H 'Content-Type: application/json' \
+    -d @- | jq -r '.data.document.id'
+)
 ```
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/kbs/KB_ID/documents \
-  -H 'Content-Type: application/json' \
-  -d "{
-    \"title\": \"ops_notes.txt\",
-    \"source_type\": \"txt\",
-    \"content\": \"$(cat test/manual_kb/ops_notes.txt)\"
-  }"
+DOC_ID_2=$(
+  jq -n \
+    --arg title "ops_notes.txt" \
+    --arg source_type "txt" \
+    --arg content "$(cat test/manual_kb/ops_notes.txt)" \
+    '{
+      title: $title,
+      source_type: $source_type,
+      content: $content
+    }' | \
+  curl -s -X POST http://localhost:8080/api/v1/kbs/$KB_ID/documents \
+    -H 'Content-Type: application/json' \
+    -d @- | jq -r '.data.document.id'
+)
 ```
 
-记录返回里的文档 `id`，下文记为 `DOC_ID`。
+确认文档 ID：
+
+```bash
+echo "$DOC_ID_1"
+echo "$DOC_ID_2"
+```
 
 ### 3. 查看切片
 
 ```bash
-curl http://localhost:8080/api/v1/documents/DOC_ID/chunks
+curl http://localhost:8080/api/v1/documents/$DOC_ID_1/chunks
 ```
 
 确认：
@@ -147,7 +173,8 @@ curl http://localhost:8080/api/v1/documents/DOC_ID/chunks
 ### 4. 执行 reindex
 
 ```bash
-curl -X POST http://localhost:8080/api/v1/documents/DOC_ID/reindex
+curl -X POST http://localhost:8080/api/v1/documents/$DOC_ID_1/reindex
+curl -X POST http://localhost:8080/api/v1/documents/$DOC_ID_2/reindex
 ```
 
 确认返回：

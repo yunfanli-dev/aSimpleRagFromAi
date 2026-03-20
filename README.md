@@ -51,7 +51,8 @@
 - 已完成 PostgreSQL / pgvector 初版 migration
 - 已完成知识库 / 文档元数据的 PostgreSQL 基础接入
 - 已完成文本切片与 `chunks` 入库最小链路
-- 下一步是基于真实 `chunks` 接入关键词检索查询
+- 已完成基于真实 `chunks` 的关键词检索查询与日志落库
+- 下一步是补文档详情 / chunk 查看接口，并继续增强检索质量
 
 ## 项目文档
 

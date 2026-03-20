@@ -23,7 +23,12 @@ func (h *QueryHandler) Query(c *gin.Context) {
 		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
-	response.JSON(c, http.StatusOK, h.service.Ask(req))
+	resp, err := h.service.Ask(c.Request.Context(), req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, resp)
 }
 
 func (h *QueryHandler) Debug(c *gin.Context) {
@@ -33,5 +38,10 @@ func (h *QueryHandler) Debug(c *gin.Context) {
 		return
 	}
 	req.Debug = true
-	response.JSON(c, http.StatusOK, h.service.Ask(req))
+	resp, err := h.service.Ask(c.Request.Context(), req)
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+	response.JSON(c, http.StatusOK, resp)
 }

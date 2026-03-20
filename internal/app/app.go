@@ -41,7 +41,7 @@ func Run() error {
 		Health:        handler.NewHealthHandler(service.NewHealthService()),
 		KnowledgeBase: handler.NewKnowledgeBaseHandler(service.NewKnowledgeBaseService(repo)),
 		Document:      handler.NewDocumentHandler(service.NewDocumentService(repo)),
-		Query:         handler.NewQueryHandler(service.NewQueryService()),
+		Query:         handler.NewQueryHandler(service.NewQueryService(repo)),
 	}
 
 	server := &http.Server{

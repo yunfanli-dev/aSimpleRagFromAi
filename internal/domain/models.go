@@ -54,6 +54,15 @@ type QueryRequest struct {
 	Debug           bool   `json:"debug"`
 }
 
+type RetrievedChunk struct {
+	ChunkID     string  `json:"chunk_id"`
+	DocumentID  string  `json:"document_id"`
+	DocumentTitle string `json:"document_title"`
+	ChunkIndex  int     `json:"chunk_index"`
+	Content     string  `json:"content"`
+	Score       float64 `json:"score"`
+}
+
 type Citation struct {
 	ChunkID string `json:"chunk_id"`
 	Text    string `json:"text"`
@@ -64,4 +73,12 @@ type QueryResponse struct {
 	Answer    string     `json:"answer"`
 	Citations []Citation `json:"citations"`
 	DebugInfo any        `json:"debug_info,omitempty"`
+}
+
+type QueryLogInput struct {
+	KnowledgeBaseID   string
+	Question          string
+	Answer            string
+	LatencyMS         int
+	RetrievedChunkIDs []string
 }

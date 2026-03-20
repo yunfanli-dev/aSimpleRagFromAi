@@ -168,3 +168,75 @@ func (r *PostgresRepository) ListDocuments(ctx context.Context, kbID string) ([]
 
 	return items, rows.Err()
 }
+
+func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question string, limit int) ([]domain.RetrievedChunk, error) {
+	const query = `
+		SELECT
+			c.id::text,
+			c.document_id::text,
+			d.title,
+			c.chunk_index,
+			c.content,
+			ts_rank(c.tsv, plainto_tsquery('simple', $2)) AS score
+		FROM chunks c
+		INNER JOIN documents d ON d.id = c.document_id
+		WHERE d.knowledge_base_id = $1
+		  AND c.tsv @@ plainto_tsquery('simple', $2)
+		ORDER BY score DESC, c.created_at DESC
+		LIMIT $3
+	`
+
+	rows, err := r.pool.Query(ctx, query, kbID, question, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]domain.RetrievedChunk, 0, limit)
+	for rows.Next() {
+		var item domain.RetrievedChunk
+		if err := rows.Scan(
+			&item.ChunkID,
+			&item.DocumentID,
+			&item.DocumentTitle,
+			&item.ChunkIndex,
+			&item.Content,
+			&item.Score,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+
+	return items, rows.Err()
+}
+
+func (r *PostgresRepository) LogQuery(ctx context.Context, input domain.QueryLogInput) error {
+	const query = `
+		INSERT INTO query_logs (
+			knowledge_base_id,
+			question,
+			answer,
+			latency_ms,
+			retrieved_chunk_ids
+		)
+		VALUES (
+			$1,
+			$2,
+			$3,
+			$4,
+			COALESCE((SELECT array_agg(value::uuid) FROM unnest($5::text[]) AS value), '{}'::uuid[])
+		)
+	`
+
+	_, err := r.pool.Exec(
+		ctx,
+		query,
+		input.KnowledgeBaseID,
+		input.Question,
+		input.Answer,
+		input.LatencyMS,
+		input.RetrievedChunkIDs,
+	)
+	return err
+}

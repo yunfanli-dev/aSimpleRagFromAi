@@ -51,3 +51,10 @@
 - 当前：最小 ingest 链路已打通
 - 下一步：基于 `chunks.tsv` 接入关键词检索查询
 - 备注：仅支持 `txt` 和 `markdown` 文本输入
+
+### 2026-03-20 fts-query
+
+- 完成：基于 PostgreSQL FTS 接入真实查询、返回真实 citations，并写入 `query_logs`
+- 当前：最小检索闭环已打通
+- 下一步：补文档详情 / chunk 查看接口，继续增强检索质量
+- 备注：当前答案仍是检索片段拼接，不含 LLM 生成

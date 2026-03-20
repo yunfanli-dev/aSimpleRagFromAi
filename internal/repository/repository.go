@@ -19,3 +19,8 @@ type DocumentRepository interface {
 	CreateDocumentWithChunks(ctx context.Context, input domain.CreateDocumentInput, chunks []domain.CreateChunkInput) (domain.Document, error)
 	ListDocuments(ctx context.Context, kbID string) ([]domain.Document, error)
 }
+
+type QueryRepository interface {
+	SearchChunks(ctx context.Context, kbID, question string, limit int) ([]domain.RetrievedChunk, error)
+	LogQuery(ctx context.Context, input domain.QueryLogInput) error
+}

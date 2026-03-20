@@ -33,6 +33,7 @@
 - 每次只推进一个清晰的小阶段，避免一次改动过散
 - 完成一部分后，必须更新 [ProgressLog.md](./ProgressLog.md)
 - 更新进度时保持极简，只写：时间、完成、当前、下一步、备注
+- 如果涉及数据库结构变更，必须检查并按需更新 [docs/DatabaseSchema.md](./docs/DatabaseSchema.md)
 
 ## 进度更新规则
 
@@ -56,6 +57,7 @@
 3. 看不明白再看 `ProjectPlan.md`
 4. 按当前进度继续
 5. 完成阶段性工作后更新 `ProgressLog.md`
+6. 如果改了数据库结构，同步检查 `docs/DatabaseSchema.md`
 
 ## 禁止事项
 
@@ -63,3 +65,4 @@
 - 忽略 `ProgressLog.md` 里的当前状态
 - 做完工作不更新进度
 - 在 `README.md` 已足够清楚时无意义重复通读所有文档
+- 修改数据库结构但不检查数据库说明文档

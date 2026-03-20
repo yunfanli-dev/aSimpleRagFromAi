@@ -10,5 +10,6 @@ fi
 psql "$POSTGRES_DSN" -f migrations/0001_init_extensions.sql
 psql "$POSTGRES_DSN" -f migrations/0002_init_schema.sql
 psql "$POSTGRES_DSN" -f migrations/0003_init_indexes.sql
+psql "$POSTGRES_DSN" -f migrations/0004_add_document_content.sql
 
 echo "migrations applied"

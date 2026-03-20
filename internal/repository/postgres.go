@@ -79,29 +79,37 @@ func (r *PostgresRepository) ListKnowledgeBases(ctx context.Context) ([]domain.K
 	return items, rows.Err()
 }
 
-func (r *PostgresRepository) CreateDocument(ctx context.Context, input domain.CreateDocumentInput) (domain.Document, error) {
-	const query = `
+func (r *PostgresRepository) CreateDocumentWithChunks(ctx context.Context, input domain.CreateDocumentInput, chunks []domain.CreateChunkInput) (domain.Document, error) {
+	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
+	if err != nil {
+		return domain.Document{}, err
+	}
+	defer tx.Rollback(ctx)
+
+	const insertDocument = `
 		INSERT INTO documents (
 			knowledge_base_id,
 			source_type,
 			title,
 			storage_path,
 			content_hash,
+			content_text,
 			status
 		)
-		VALUES ($1, $2, $3, $4, $5, 'pending')
+		VALUES ($1, $2, $3, $4, $5, $6, 'pending')
 		RETURNING id::text, knowledge_base_id::text, title, source_type, status
 	`
 
 	var doc domain.Document
-	err := r.pool.QueryRow(
+	err = tx.QueryRow(
 		ctx,
-		query,
+		insertDocument,
 		input.KnowledgeBaseID,
 		input.SourceType,
 		input.Title,
 		input.StoragePath,
 		input.ContentHash,
+		input.Content,
 	).Scan(
 		&doc.ID,
 		&doc.KnowledgeBaseID,
@@ -109,7 +117,30 @@ func (r *PostgresRepository) CreateDocument(ctx context.Context, input domain.Cr
 		&doc.SourceType,
 		&doc.Status,
 	)
-	return doc, err
+	if err != nil {
+		return domain.Document{}, err
+	}
+
+	const insertChunk = `
+		INSERT INTO chunks (document_id, chunk_index, content, token_count, metadata_json)
+		VALUES ($1, $2, $3, $4, '{}'::jsonb)
+	`
+	for _, chunk := range chunks {
+		if _, err := tx.Exec(ctx, insertChunk, doc.ID, chunk.ChunkIndex, chunk.Content, chunk.TokenCount); err != nil {
+			return domain.Document{}, err
+		}
+	}
+
+	if _, err := tx.Exec(ctx, `UPDATE documents SET status = 'indexed', updated_at = NOW() WHERE id = $1`, doc.ID); err != nil {
+		return domain.Document{}, err
+	}
+	doc.Status = "indexed"
+
+	if err := tx.Commit(ctx); err != nil {
+		return domain.Document{}, err
+	}
+
+	return doc, nil
 }
 
 func (r *PostgresRepository) ListDocuments(ctx context.Context, kbID string) ([]domain.Document, error) {

@@ -39,7 +39,7 @@ func (h *DocumentHandler) Create(c *gin.Context) {
 
 	item, err := h.service.Create(c.Request.Context(), input)
 	if err != nil {
-		response.Error(c, http.StatusInternalServerError, err.Error())
+		response.Error(c, http.StatusBadRequest, err.Error())
 		return
 	}
 

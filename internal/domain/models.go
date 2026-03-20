@@ -25,7 +25,27 @@ type CreateDocumentInput struct {
 	Title           string `json:"title" binding:"required"`
 	SourceType      string `json:"source_type" binding:"required"`
 	StoragePath     string `json:"storage_path"`
-	ContentHash     string `json:"content_hash" binding:"required"`
+	ContentHash     string `json:"content_hash"`
+	Content         string `json:"content" binding:"required"`
+}
+
+type Chunk struct {
+	ID         string `json:"id"`
+	DocumentID string `json:"document_id"`
+	ChunkIndex int    `json:"chunk_index"`
+	Content    string `json:"content"`
+	TokenCount int    `json:"token_count"`
+}
+
+type CreateChunkInput struct {
+	ChunkIndex int
+	Content    string
+	TokenCount int
+}
+
+type DocumentIngestResult struct {
+	Document   Document `json:"document"`
+	ChunkCount int      `json:"chunk_count"`
 }
 
 type QueryRequest struct {

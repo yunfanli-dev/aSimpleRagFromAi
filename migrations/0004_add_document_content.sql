@@ -1,0 +1,2 @@
+ALTER TABLE documents
+ADD COLUMN IF NOT EXISTS content_text TEXT NOT NULL DEFAULT '';

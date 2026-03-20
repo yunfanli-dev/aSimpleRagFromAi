@@ -1,0 +1,9 @@
+The local development stack uses Docker Compose to start PostgreSQL and Redis.
+
+PostgreSQL stores knowledge bases, documents, chunks, and query logs.
+
+Redis is reserved for future cache and queue experiments, but the current minimal
+retrieval demo only requires PostgreSQL data to complete ingest and search.
+
+When debugging retrieval quality, inspect the stored chunks first and then compare
+the returned citations with the expected document title and chunk order.

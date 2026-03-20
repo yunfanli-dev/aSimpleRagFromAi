@@ -232,19 +232,40 @@ func (r *PostgresRepository) ListChunks(ctx context.Context, documentID string) 
 }
 
 func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question string, limit int) ([]domain.RetrievedChunk, error) {
+	if limit <= 0 || question == "" {
+		return []domain.RetrievedChunk{}, nil
+	}
+
 	const query = `
+		WITH ranked_chunks AS (
+			SELECT
+				c.id::text,
+				c.document_id::text,
+				d.title,
+				c.chunk_index,
+				c.content,
+				ts_rank_cd(
+					setweight(to_tsvector('simple', coalesce(d.title, '')), 'A') ||
+					setweight(c.tsv, 'B'),
+					websearch_to_tsquery('simple', $2)
+				) AS score
+			FROM chunks c
+			INNER JOIN documents d ON d.id = c.document_id
+			WHERE d.knowledge_base_id = $1
+			  AND (
+				setweight(to_tsvector('simple', coalesce(d.title, '')), 'A') ||
+				setweight(c.tsv, 'B')
+			  ) @@ websearch_to_tsquery('simple', $2)
+		)
 		SELECT
-			c.id::text,
-			c.document_id::text,
-			d.title,
-			c.chunk_index,
-			c.content,
-			ts_rank(c.tsv, plainto_tsquery('simple', $2)) AS score
-		FROM chunks c
-		INNER JOIN documents d ON d.id = c.document_id
-		WHERE d.knowledge_base_id = $1
-		  AND c.tsv @@ plainto_tsquery('simple', $2)
-		ORDER BY score DESC, c.created_at DESC
+			id,
+			document_id,
+			title,
+			chunk_index,
+			content,
+			score
+		FROM ranked_chunks
+		ORDER BY score DESC, title ASC, chunk_index ASC
 		LIMIT $3
 	`
 

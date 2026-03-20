@@ -2,11 +2,18 @@ package service
 
 import (
 	"context"
+	"strconv"
 	"strings"
 	"time"
 
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/domain"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/repository"
+)
+
+const (
+	defaultRetrieveLimit = 5
+	maxAnswerLength      = 1200
+	maxCitationTextRunes = 240
 )
 
 type QueryService struct {
@@ -19,8 +26,9 @@ func NewQueryService(repo repository.QueryRepository) *QueryService {
 
 func (s *QueryService) Ask(ctx context.Context, req domain.QueryRequest) (domain.QueryResponse, error) {
 	start := time.Now()
+	question := normalizeQuestion(req.Question)
 
-	chunks, err := s.repo.SearchChunks(ctx, req.KnowledgeBaseID, req.Question, 5)
+	chunks, err := s.repo.SearchChunks(ctx, req.KnowledgeBaseID, question, defaultRetrieveLimit)
 	if err != nil {
 		return domain.QueryResponse{}, err
 	}
@@ -32,17 +40,17 @@ func (s *QueryService) Ask(ctx context.Context, req domain.QueryRequest) (domain
 
 	if req.Debug {
 		resp.DebugInfo = map[string]any{
-			"query":           req.Question,
-			"knowledge_base":  req.KnowledgeBaseID,
-			"retrieved_count": len(chunks),
+			"query":            question,
+			"knowledge_base":   req.KnowledgeBaseID,
+			"retrieved_count":  len(chunks),
 			"retrieved_chunks": chunks,
-			"latency_ms":      time.Since(start).Milliseconds(),
+			"latency_ms":       time.Since(start).Milliseconds(),
 		}
 	}
 
 	if err := s.repo.LogQuery(ctx, domain.QueryLogInput{
 		KnowledgeBaseID:   req.KnowledgeBaseID,
-		Question:          req.Question,
+		Question:          question,
 		Answer:            resp.Answer,
 		LatencyMS:         int(time.Since(start).Milliseconds()),
 		RetrievedChunkIDs: chunkIDs(chunks),
@@ -60,12 +68,14 @@ func buildAnswer(chunks []domain.RetrievedChunk) string {
 
 	parts := make([]string, 0, len(chunks))
 	for _, chunk := range chunks {
-		parts = append(parts, chunk.Content)
+		excerpt := clipText(chunk.Content, maxCitationTextRunes)
+		parts = append(parts, chunk.DocumentTitle+" [chunk "+formatChunkIndex(chunk.ChunkIndex)+"]: "+excerpt)
 	}
 
 	answer := strings.Join(parts, "\n\n")
-	if len(answer) > 1200 {
-		return strings.TrimSpace(answer[:1200]) + "..."
+	answerRunes := []rune(answer)
+	if len(answerRunes) > maxAnswerLength {
+		return strings.TrimSpace(string(answerRunes[:maxAnswerLength])) + "..."
 	}
 	return answer
 }
@@ -74,9 +84,13 @@ func buildCitations(chunks []domain.RetrievedChunk) []domain.Citation {
 	items := make([]domain.Citation, 0, len(chunks))
 	for _, chunk := range chunks {
 		items = append(items, domain.Citation{
-			ChunkID: chunk.ChunkID,
-			Text:    chunk.Content,
-			Source:  chunk.DocumentTitle,
+			ChunkID:       chunk.ChunkID,
+			DocumentID:    chunk.DocumentID,
+			DocumentTitle: chunk.DocumentTitle,
+			ChunkIndex:    chunk.ChunkIndex,
+			Text:          clipText(chunk.Content, maxCitationTextRunes),
+			Source:        chunk.DocumentTitle,
+			Score:         chunk.Score,
 		})
 	}
 	return items
@@ -88,4 +102,26 @@ func chunkIDs(chunks []domain.RetrievedChunk) []string {
 		items = append(items, chunk.ChunkID)
 	}
 	return items
+}
+
+func normalizeQuestion(question string) string {
+	return strings.Join(strings.Fields(question), " ")
+}
+
+func clipText(text string, limit int) string {
+	trimmed := strings.TrimSpace(text)
+	if trimmed == "" {
+		return trimmed
+	}
+
+	runes := []rune(trimmed)
+	if len(runes) <= limit {
+		return trimmed
+	}
+
+	return strings.TrimSpace(string(runes[:limit])) + "..."
+}
+
+func formatChunkIndex(index int) string {
+	return strconv.Itoa(index)
 }

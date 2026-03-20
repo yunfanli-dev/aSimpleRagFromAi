@@ -65,3 +65,10 @@
 - 当前：最小读写调试接口已齐
 - 下一步：增强检索排序与结果质量，再准备接 embedding
 - 备注：新增 `GET /api/v1/documents/:id` 和 `GET /api/v1/documents/:id/chunks`
+
+### 2026-03-20 retrieval-quality
+
+- 完成：增强 FTS 排序、补充 citation 字段、整理查询结果展示，并补最小人工验证样本
+- 当前：关键词检索 demo 已更适合人工校验
+- 下一步：基于当前检索结构准备 embedding 接入和向量检索链路
+- 备注：待用本地样本继续做接口回归验证

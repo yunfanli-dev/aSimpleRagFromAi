@@ -57,18 +57,22 @@ type QueryRequest struct {
 }
 
 type RetrievedChunk struct {
-	ChunkID     string  `json:"chunk_id"`
-	DocumentID  string  `json:"document_id"`
-	DocumentTitle string `json:"document_title"`
-	ChunkIndex  int     `json:"chunk_index"`
-	Content     string  `json:"content"`
-	Score       float64 `json:"score"`
+	ChunkID       string  `json:"chunk_id"`
+	DocumentID    string  `json:"document_id"`
+	DocumentTitle string  `json:"document_title"`
+	ChunkIndex    int     `json:"chunk_index"`
+	Content       string  `json:"content"`
+	Score         float64 `json:"score"`
 }
 
 type Citation struct {
-	ChunkID string `json:"chunk_id"`
-	Text    string `json:"text"`
-	Source  string `json:"source"`
+	ChunkID       string  `json:"chunk_id"`
+	DocumentID    string  `json:"document_id"`
+	DocumentTitle string  `json:"document_title"`
+	ChunkIndex    int     `json:"chunk_index"`
+	Text          string  `json:"text"`
+	Source        string  `json:"source"`
+	Score         float64 `json:"score,omitempty"`
 }
 
 type QueryResponse struct {

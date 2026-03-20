@@ -125,7 +125,7 @@
 
 说明：
 
-- 当前表已建好，但查询日志写入还未接入
+- 当前已接入最小查询日志写入，记录问题、拼接答案、耗时和命中的 chunk id
 
 ## 当前索引
 
@@ -156,12 +156,12 @@
 - `knowledge_bases`: 已接入创建、列表、单条查询
 - `documents`: 已接入创建、列表
 - `chunks`: 已接入最小 ingest 写入
+- `query_logs`: 已接入最小查询日志写入
 
 ## 当前未接入但已预留
 
 - `chunk_vectors`: 还未写入 embedding
 - `ingest_jobs`: 还未接 worker
-- `query_logs`: 还未接查询日志写入
 
 ## 对应 migration
 

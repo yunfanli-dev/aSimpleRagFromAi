@@ -6,8 +6,8 @@
 
 每次开启新的 session，必须先阅读以下文件：
 
-1. [README.md](/home/ubuntu/aiCodingTest/aSimpleRagFromAi/aSimpleRagFromAi/README.md)
-2. [ProgressLog.md](/home/ubuntu/aiCodingTest/aSimpleRagFromAi/aSimpleRagFromAi/ProgressLog.md)
+1. [README.md](./README.md)
+2. [ProgressLog.md](./ProgressLog.md)
 
 目标：
 
@@ -19,7 +19,7 @@
 
 如果仅通过 `README.md` 仍无法看明白项目目标、范围、架构或下一步方向，必须继续阅读：
 
-3. [ProjectPlan.md](/home/ubuntu/aiCodingTest/aSimpleRagFromAi/aSimpleRagFromAi/ProjectPlan.md)
+3. [ProjectPlan.md](./ProjectPlan.md)
 
 原则：
 
@@ -31,7 +31,7 @@
 
 - 默认从 `ProgressLog.md` 记录的“当前 / 下一步”继续推进
 - 每次只推进一个清晰的小阶段，避免一次改动过散
-- 完成一部分后，必须更新 [ProgressLog.md](/home/ubuntu/aiCodingTest/aSimpleRagFromAi/aSimpleRagFromAi/ProgressLog.md)
+- 完成一部分后，必须更新 [ProgressLog.md](./ProgressLog.md)
 - 更新进度时保持极简，只写：时间、完成、当前、下一步、备注
 
 ## 进度更新规则

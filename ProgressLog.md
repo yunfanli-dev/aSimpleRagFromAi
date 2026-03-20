@@ -114,3 +114,10 @@
 - 当前：查询链路已可切到真实 OpenAI answer 生成
 - 下一步：接真实 rerank provider，并补 OpenAI 路径人工回归
 - 备注：`LLM_PROVIDER=openai` 时需配置 `OPENAI_API_KEY`
+
+### 2026-03-20 minimax-llm
+
+- 完成：将真实 LLM provider 从 OpenAI 切到 MiniMax，并同步更新配置与测试文档
+- 当前：查询链路已可切到真实 MiniMax answer 生成
+- 下一步：接真实 rerank provider，并补 MiniMax 路径人工回归
+- 备注：`LLM_PROVIDER=minimax` 时需配置 `MINIMAX_API_KEY`

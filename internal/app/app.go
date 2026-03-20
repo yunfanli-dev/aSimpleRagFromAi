@@ -82,16 +82,15 @@ func Run() error {
 
 func buildLLMProvider(cfg config.Config) (llm.Provider, error) {
 	switch cfg.LLMProvider {
-	case "openai":
+	case "minimax":
 		model := cfg.LLMModel
 		if strings.TrimSpace(model) == "" || strings.HasPrefix(model, "local-") {
-			model = "gpt-5-mini"
+			model = "MiniMax-M2.7"
 		}
-		provider, err := llm.NewOpenAIProvider(
+		provider, err := llm.NewMiniMaxProvider(
 			model,
-			cfg.OpenAIBaseURL,
-			cfg.OpenAIAPIKey,
-			cfg.LLMReasoningEffort,
+			cfg.MiniMaxBaseURL,
+			cfg.MiniMaxAPIKey,
 			cfg.LLMTimeout,
 		)
 		if err != nil {
@@ -101,6 +100,6 @@ func buildLLMProvider(cfg config.Config) (llm.Provider, error) {
 	case "local", "":
 		return llm.NewExtractiveProvider(cfg.LLMModel), nil
 	default:
-		return nil, errors.New("unsupported LLM_PROVIDER: use 'local' or 'openai'")
+		return nil, errors.New("unsupported LLM_PROVIDER: use 'local' or 'minimax'")
 	}
 }

@@ -58,7 +58,7 @@
 - 已完成基于 FTS + vector 的最小混合召回
 - 已完成最小 rerank、结果去重和文档分散控制
 - 已完成本地 LLM 占位层接入，answer 生成已从检索拼接中拆出
-- 已接入可切换的真实 OpenAI LLM provider，保留本地 fallback
+- 已接入可切换的真实 MiniMax LLM provider，保留本地 fallback
 - 下一步是接真实 rerank provider，并补更完整的人工回归
 
 ## LLM 配置
@@ -66,22 +66,21 @@
 当前支持两种 LLM provider：
 
 - `LLM_PROVIDER=local`
-- `LLM_PROVIDER=openai`
+- `LLM_PROVIDER=minimax`
 
-如果使用 OpenAI，至少需要：
+如果使用 MiniMax，至少需要：
 
 ```bash
-export LLM_PROVIDER=openai
-export OPENAI_API_KEY=your_api_key
-export LLM_MODEL=gpt-5-mini
+export LLM_PROVIDER=minimax
+export MINIMAX_API_KEY=your_api_key
+export LLM_MODEL=MiniMax-M2.7
 ```
 
 可选参数：
 
 ```bash
-export OPENAI_BASE_URL=https://api.openai.com/v1
+export MINIMAX_BASE_URL=https://api.minimax.io/v1
 export LLM_TIMEOUT=30s
-export LLM_REASONING_EFFORT=low
 ```
 
 ## 项目文档

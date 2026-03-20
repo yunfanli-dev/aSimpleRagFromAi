@@ -53,7 +53,12 @@
 - 已完成文本切片与 `chunks` 入库最小链路
 - 已完成基于真实 `chunks` 的关键词检索查询与日志落库
 - 已完成文档详情 / chunk 查看接口
-- 下一步是增强检索排序与结果质量，再准备接 embedding
+- 已完成检索排序与结果展示增强，并补充人工验证样本
+- 已完成本地 deterministic embedding 生成与 `POST /api/v1/documents/:id/reindex` 向量写入入口
+- 已完成基于 FTS + vector 的最小混合召回
+- 已完成最小 rerank、结果去重和文档分散控制
+- 已完成本地 LLM 占位层接入，answer 生成已从检索拼接中拆出
+- 下一步是替换真实 LLM / rerank provider，并补更完整的人工回归
 
 ## 项目文档
 

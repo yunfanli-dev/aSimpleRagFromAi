@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/domain"
+	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/embedding"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/ingest"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/repository"
 )
@@ -16,11 +17,12 @@ var errUnsupportedSourceType = errors.New("unsupported source_type: only txt and
 var errEmptyContent = errors.New("content is empty after normalization")
 
 type DocumentService struct {
-	repo repository.DocumentRepository
+	repo     repository.DocumentRepository
+	embedder embedding.Provider
 }
 
-func NewDocumentService(repo repository.DocumentRepository) *DocumentService {
-	return &DocumentService{repo: repo}
+func NewDocumentService(repo repository.DocumentRepository, embedder embedding.Provider) *DocumentService {
+	return &DocumentService{repo: repo, embedder: embedder}
 }
 
 func (s *DocumentService) Create(ctx context.Context, input domain.CreateDocumentInput) (domain.DocumentIngestResult, error) {
@@ -65,4 +67,37 @@ func (s *DocumentService) Get(ctx context.Context, id string) (domain.Document, 
 
 func (s *DocumentService) ListChunks(ctx context.Context, documentID string) ([]domain.Chunk, error) {
 	return s.repo.ListChunks(ctx, documentID)
+}
+
+func (s *DocumentService) Reindex(ctx context.Context, documentID string) (domain.ReindexDocumentResult, error) {
+	document, err := s.repo.GetDocument(ctx, documentID)
+	if err != nil {
+		return domain.ReindexDocumentResult{}, err
+	}
+
+	chunks, err := s.repo.ListChunkEmbeddingsInput(ctx, documentID)
+	if err != nil {
+		return domain.ReindexDocumentResult{}, err
+	}
+
+	result := domain.ReindexDocumentResult{
+		DocumentID:      document.ID,
+		ChunkCount:      len(chunks),
+		EmbeddingModel:  s.embedder.Model(),
+		EmbeddingStatus: "completed",
+	}
+
+	for _, chunk := range chunks {
+		vector, err := s.embedder.Embed(ctx, chunk.Content)
+		if err != nil {
+			return domain.ReindexDocumentResult{}, err
+		}
+
+		if err := s.repo.UpsertChunkEmbedding(ctx, chunk.ChunkID, vector, s.embedder.Model()); err != nil {
+			return domain.ReindexDocumentResult{}, err
+		}
+		result.EmbeddedCount++
+	}
+
+	return result, nil
 }

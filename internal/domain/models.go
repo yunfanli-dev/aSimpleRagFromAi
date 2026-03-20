@@ -50,6 +50,20 @@ type DocumentIngestResult struct {
 	ChunkCount int      `json:"chunk_count"`
 }
 
+type ChunkEmbedding struct {
+	ChunkID    string
+	ChunkIndex int
+	Content    string
+}
+
+type ReindexDocumentResult struct {
+	DocumentID      string `json:"document_id"`
+	ChunkCount      int    `json:"chunk_count"`
+	EmbeddedCount   int    `json:"embedded_count"`
+	EmbeddingModel  string `json:"embedding_model"`
+	EmbeddingStatus string `json:"embedding_status"`
+}
+
 type QueryRequest struct {
 	KnowledgeBaseID string `json:"knowledge_base_id" binding:"required"`
 	Question        string `json:"question" binding:"required"`
@@ -57,27 +71,31 @@ type QueryRequest struct {
 }
 
 type RetrievedChunk struct {
-	ChunkID       string  `json:"chunk_id"`
-	DocumentID    string  `json:"document_id"`
-	DocumentTitle string  `json:"document_title"`
-	ChunkIndex    int     `json:"chunk_index"`
-	Content       string  `json:"content"`
-	Score         float64 `json:"score"`
+	ChunkID         string  `json:"chunk_id"`
+	DocumentID      string  `json:"document_id"`
+	DocumentTitle   string  `json:"document_title"`
+	ChunkIndex      int     `json:"chunk_index"`
+	Content         string  `json:"content"`
+	Score           float64 `json:"score"`
+	QualityScore    float64 `json:"quality_score,omitempty"`
+	RetrievalSource string  `json:"retrieval_source,omitempty"`
 }
 
 type Citation struct {
-	ChunkID       string  `json:"chunk_id"`
-	DocumentID    string  `json:"document_id"`
-	DocumentTitle string  `json:"document_title"`
-	ChunkIndex    int     `json:"chunk_index"`
-	Text          string  `json:"text"`
-	Source        string  `json:"source"`
-	Score         float64 `json:"score,omitempty"`
+	ChunkID         string  `json:"chunk_id"`
+	DocumentID      string  `json:"document_id"`
+	DocumentTitle   string  `json:"document_title"`
+	ChunkIndex      int     `json:"chunk_index"`
+	Text            string  `json:"text"`
+	Source          string  `json:"source"`
+	Score           float64 `json:"score,omitempty"`
+	RetrievalSource string  `json:"retrieval_source,omitempty"`
 }
 
 type QueryResponse struct {
 	Answer    string     `json:"answer"`
 	Citations []Citation `json:"citations"`
+	Model     string     `json:"model,omitempty"`
 	DebugInfo any        `json:"debug_info,omitempty"`
 }
 

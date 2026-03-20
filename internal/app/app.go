@@ -10,7 +10,9 @@ import (
 
 	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/config"
+	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/embedding"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/handler"
+	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/llm"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/observability"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/repository"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/service"
@@ -36,12 +38,14 @@ func Run() error {
 	}
 
 	repo := repository.NewPostgresRepository(pool)
+	embedder := embedding.NewHashProvider(cfg.EmbeddingModel, cfg.EmbeddingDims)
+	llmProvider := llm.NewExtractiveProvider(cfg.LLMModel)
 
 	handlers := Handlers{
 		Health:        handler.NewHealthHandler(service.NewHealthService()),
 		KnowledgeBase: handler.NewKnowledgeBaseHandler(service.NewKnowledgeBaseService(repo)),
-		Document:      handler.NewDocumentHandler(service.NewDocumentService(repo)),
-		Query:         handler.NewQueryHandler(service.NewQueryService(repo)),
+		Document:      handler.NewDocumentHandler(service.NewDocumentService(repo, embedder)),
+		Query:         handler.NewQueryHandler(service.NewQueryService(repo, embedder, llmProvider)),
 	}
 
 	server := &http.Server{

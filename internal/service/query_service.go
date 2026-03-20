@@ -2,40 +2,54 @@ package service
 
 import (
 	"context"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/domain"
+	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/embedding"
+	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/llm"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/repository"
+	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/rerank"
 )
 
 const (
-	defaultRetrieveLimit = 5
-	maxAnswerLength      = 1200
-	maxCitationTextRunes = 240
+	defaultRetrieveLimit   = 5
+	candidateRetrieveLimit = 12
+	maxCitationTextRunes   = 240
 )
 
 type QueryService struct {
-	repo repository.QueryRepository
+	repo     repository.QueryRepository
+	embedder embedding.Provider
+	llm      llm.Provider
 }
 
-func NewQueryService(repo repository.QueryRepository) *QueryService {
-	return &QueryService{repo: repo}
+func NewQueryService(repo repository.QueryRepository, embedder embedding.Provider, llmProvider llm.Provider) *QueryService {
+	return &QueryService{repo: repo, embedder: embedder, llm: llmProvider}
 }
 
 func (s *QueryService) Ask(ctx context.Context, req domain.QueryRequest) (domain.QueryResponse, error) {
 	start := time.Now()
 	question := normalizeQuestion(req.Question)
+	questionEmbedding, err := s.embedQuestion(ctx, question)
+	if err != nil {
+		return domain.QueryResponse{}, err
+	}
 
-	chunks, err := s.repo.SearchChunks(ctx, req.KnowledgeBaseID, question, defaultRetrieveLimit)
+	chunks, err := s.repo.SearchChunks(ctx, req.KnowledgeBaseID, question, questionEmbedding, candidateRetrieveLimit)
+	if err != nil {
+		return domain.QueryResponse{}, err
+	}
+	chunks = selectTopChunks(question, chunks, defaultRetrieveLimit)
+	answer, err := s.llm.Generate(ctx, question, chunks)
 	if err != nil {
 		return domain.QueryResponse{}, err
 	}
 
 	resp := domain.QueryResponse{
-		Answer:    buildAnswer(chunks),
+		Answer:    answer,
 		Citations: buildCitations(chunks),
+		Model:     s.llm.Model(),
 	}
 
 	if req.Debug {
@@ -44,6 +58,8 @@ func (s *QueryService) Ask(ctx context.Context, req domain.QueryRequest) (domain
 			"knowledge_base":   req.KnowledgeBaseID,
 			"retrieved_count":  len(chunks),
 			"retrieved_chunks": chunks,
+			"embedding_model":  s.embedder.Model(),
+			"llm_model":        s.llm.Model(),
 			"latency_ms":       time.Since(start).Milliseconds(),
 		}
 	}
@@ -51,7 +67,7 @@ func (s *QueryService) Ask(ctx context.Context, req domain.QueryRequest) (domain
 	if err := s.repo.LogQuery(ctx, domain.QueryLogInput{
 		KnowledgeBaseID:   req.KnowledgeBaseID,
 		Question:          question,
-		Answer:            resp.Answer,
+		Answer:            answer,
 		LatencyMS:         int(time.Since(start).Milliseconds()),
 		RetrievedChunkIDs: chunkIDs(chunks),
 	}); err != nil {
@@ -61,36 +77,18 @@ func (s *QueryService) Ask(ctx context.Context, req domain.QueryRequest) (domain
 	return resp, nil
 }
 
-func buildAnswer(chunks []domain.RetrievedChunk) string {
-	if len(chunks) == 0 {
-		return "I couldn't find relevant content in the current knowledge base."
-	}
-
-	parts := make([]string, 0, len(chunks))
-	for _, chunk := range chunks {
-		excerpt := clipText(chunk.Content, maxCitationTextRunes)
-		parts = append(parts, chunk.DocumentTitle+" [chunk "+formatChunkIndex(chunk.ChunkIndex)+"]: "+excerpt)
-	}
-
-	answer := strings.Join(parts, "\n\n")
-	answerRunes := []rune(answer)
-	if len(answerRunes) > maxAnswerLength {
-		return strings.TrimSpace(string(answerRunes[:maxAnswerLength])) + "..."
-	}
-	return answer
-}
-
 func buildCitations(chunks []domain.RetrievedChunk) []domain.Citation {
 	items := make([]domain.Citation, 0, len(chunks))
 	for _, chunk := range chunks {
 		items = append(items, domain.Citation{
-			ChunkID:       chunk.ChunkID,
-			DocumentID:    chunk.DocumentID,
-			DocumentTitle: chunk.DocumentTitle,
-			ChunkIndex:    chunk.ChunkIndex,
-			Text:          clipText(chunk.Content, maxCitationTextRunes),
-			Source:        chunk.DocumentTitle,
-			Score:         chunk.Score,
+			ChunkID:         chunk.ChunkID,
+			DocumentID:      chunk.DocumentID,
+			DocumentTitle:   chunk.DocumentTitle,
+			ChunkIndex:      chunk.ChunkIndex,
+			Text:            clipText(chunk.Content, maxCitationTextRunes),
+			Source:          chunk.DocumentTitle,
+			Score:           chunk.Score,
+			RetrievalSource: chunk.RetrievalSource,
 		})
 	}
 	return items
@@ -122,6 +120,69 @@ func clipText(text string, limit int) string {
 	return strings.TrimSpace(string(runes[:limit])) + "..."
 }
 
-func formatChunkIndex(index int) string {
-	return strconv.Itoa(index)
+func (s *QueryService) embedQuestion(ctx context.Context, question string) ([]float32, error) {
+	if question == "" {
+		return nil, nil
+	}
+
+	return s.embedder.Embed(ctx, question)
+}
+
+func selectTopChunks(question string, chunks []domain.RetrievedChunk, limit int) []domain.RetrievedChunk {
+	if len(chunks) == 0 || limit <= 0 {
+		return []domain.RetrievedChunk{}
+	}
+
+	ranked := rerank.Rank(question, chunks)
+	selected := make([]domain.RetrievedChunk, 0, limit)
+	documentCounts := make(map[string]int)
+	seen := make(map[string]struct{}, len(ranked))
+
+	for _, chunk := range ranked {
+		if _, ok := seen[chunk.ChunkID]; ok {
+			continue
+		}
+		if documentCounts[chunk.DocumentID] >= 2 {
+			continue
+		}
+		if hasNearbyChunk(selected, chunk) {
+			continue
+		}
+
+		seen[chunk.ChunkID] = struct{}{}
+		documentCounts[chunk.DocumentID]++
+		selected = append(selected, chunk)
+		if len(selected) == limit {
+			break
+		}
+	}
+
+	if len(selected) == 0 && len(ranked) > 0 {
+		return ranked[:min(limit, len(ranked))]
+	}
+
+	return selected
+}
+
+func hasNearbyChunk(selected []domain.RetrievedChunk, candidate domain.RetrievedChunk) bool {
+	for _, item := range selected {
+		if item.DocumentID != candidate.DocumentID {
+			continue
+		}
+		diff := item.ChunkIndex - candidate.ChunkIndex
+		if diff < 0 {
+			diff = -diff
+		}
+		if diff <= 1 {
+			return true
+		}
+	}
+	return false
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }

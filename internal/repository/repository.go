@@ -20,9 +20,11 @@ type DocumentRepository interface {
 	GetDocument(ctx context.Context, id string) (domain.Document, error)
 	ListDocuments(ctx context.Context, kbID string) ([]domain.Document, error)
 	ListChunks(ctx context.Context, documentID string) ([]domain.Chunk, error)
+	ListChunkEmbeddingsInput(ctx context.Context, documentID string) ([]domain.ChunkEmbedding, error)
+	UpsertChunkEmbedding(ctx context.Context, chunkID string, embedding []float32, model string) error
 }
 
 type QueryRepository interface {
-	SearchChunks(ctx context.Context, kbID, question string, limit int) ([]domain.RetrievedChunk, error)
+	SearchChunks(ctx context.Context, kbID, question string, questionEmbedding []float32, limit int) ([]domain.RetrievedChunk, error)
 	LogQuery(ctx context.Context, input domain.QueryLogInput) error
 }

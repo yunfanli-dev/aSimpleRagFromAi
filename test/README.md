@@ -21,9 +21,15 @@
    - `document_title` 与预期文档一致
    - `chunk_index` 顺序合理
    - `text` 为截断后的命中片段，不是整段原文堆叠
+   - 已执行 `reindex` 的文档在查询时可走向量召回 + 关键词召回融合
+   - `retrieval_source` 会标记 `keyword`、`vector` 或 `hybrid`
+   - 返回结果不会被同一文档相邻 chunk 过度占满
+   - `model` 当前会返回本地占位 LLM 名称
 7. 如需排障，再检查 `query_logs` 是否写入命中的 chunk id。
+8. 调用 `POST /api/v1/documents/:id/reindex`，确认返回 `embedded_count` 和 `embedding_model`。
 
 ## 当前目标
 
 - 先验证关键词检索排序和 citation 展示是否稳定
-- 后续在这套样本上继续做 embedding 接入前后的回归
+- 在这套样本上继续做 embedding、向量召回和混合检索回归
+- 后续补真实 rerank 与 LLM 接入后的回归基线

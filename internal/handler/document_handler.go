@@ -72,8 +72,15 @@ func (h *DocumentHandler) ListChunks(c *gin.Context) {
 }
 
 func (h *DocumentHandler) Reindex(c *gin.Context) {
-	response.JSON(c, http.StatusAccepted, gin.H{
-		"message":     "document reindex endpoint scaffolded",
-		"document_id": c.Param("id"),
-	})
+	item, err := h.service.Reindex(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		if err == repository.ErrNotFound {
+			response.Error(c, http.StatusNotFound, "document not found")
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(c, http.StatusAccepted, item)
 }

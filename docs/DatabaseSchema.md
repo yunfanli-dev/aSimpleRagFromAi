@@ -85,7 +85,8 @@
 
 说明：
 
-- 当前表已建好，但业务链路还没有写入 embedding
+- 当前已接入文档 reindex 时的最小 embedding 写入链路
+- 现阶段使用本地 deterministic embedding provider 占位，后续可替换真实模型
 
 ### `ingest_jobs`
 
@@ -156,11 +157,11 @@
 - `knowledge_bases`: 已接入创建、列表、单条查询
 - `documents`: 已接入创建、列表
 - `chunks`: 已接入最小 ingest 写入
+- `chunk_vectors`: 已接入文档 reindex 写入
 - `query_logs`: 已接入最小查询日志写入
 
 ## 当前未接入但已预留
 
-- `chunk_vectors`: 还未写入 embedding
 - `ingest_jobs`: 还未接 worker
 
 ## 对应 migration

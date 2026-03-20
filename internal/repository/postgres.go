@@ -3,6 +3,8 @@ package repository
 import (
 	"context"
 	"errors"
+	"strconv"
+	"strings"
 
 	"github.com/jackc/pgx/v5"
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -231,24 +233,69 @@ func (r *PostgresRepository) ListChunks(ctx context.Context, documentID string) 
 	return items, rows.Err()
 }
 
-func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question string, limit int) ([]domain.RetrievedChunk, error) {
+func (r *PostgresRepository) ListChunkEmbeddingsInput(ctx context.Context, documentID string) ([]domain.ChunkEmbedding, error) {
+	const query = `
+		SELECT id::text, chunk_index, content
+		FROM chunks
+		WHERE document_id = $1
+		ORDER BY chunk_index ASC
+	`
+
+	rows, err := r.pool.Query(ctx, query, documentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]domain.ChunkEmbedding, 0)
+	for rows.Next() {
+		var item domain.ChunkEmbedding
+		if err := rows.Scan(&item.ChunkID, &item.ChunkIndex, &item.Content); err != nil {
+			return nil, err
+		}
+		items = append(items, item)
+	}
+
+	return items, rows.Err()
+}
+
+func (r *PostgresRepository) UpsertChunkEmbedding(ctx context.Context, chunkID string, embedding []float32, model string) error {
+	const query = `
+		INSERT INTO chunk_vectors (chunk_id, embedding, embedding_model)
+		VALUES ($1, $2::vector, $3)
+		ON CONFLICT (chunk_id) DO UPDATE
+		SET embedding = EXCLUDED.embedding,
+			embedding_model = EXCLUDED.embedding_model,
+			created_at = NOW()
+	`
+
+	_, err := r.pool.Exec(ctx, query, chunkID, vectorLiteral(embedding), model)
+	return err
+}
+
+func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question string, questionEmbedding []float32, limit int) ([]domain.RetrievedChunk, error) {
 	if limit <= 0 || question == "" {
 		return []domain.RetrievedChunk{}, nil
 	}
 
 	const query = `
-		WITH ranked_chunks AS (
+		WITH keyword_hits AS (
 			SELECT
 				c.id::text,
 				c.document_id::text,
 				d.title,
 				c.chunk_index,
 				c.content,
-				ts_rank_cd(
-					setweight(to_tsvector('simple', coalesce(d.title, '')), 'A') ||
-					setweight(c.tsv, 'B'),
-					websearch_to_tsquery('simple', $2)
-				) AS score
+				row_number() OVER (
+					ORDER BY
+						ts_rank_cd(
+							setweight(to_tsvector('simple', coalesce(d.title, '')), 'A') ||
+							setweight(c.tsv, 'B'),
+							websearch_to_tsquery('simple', $2)
+						) DESC,
+						d.title ASC,
+						c.chunk_index ASC
+				) AS keyword_rank
 			FROM chunks c
 			INNER JOIN documents d ON d.id = c.document_id
 			WHERE d.knowledge_base_id = $1
@@ -256,6 +303,38 @@ func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question st
 				setweight(to_tsvector('simple', coalesce(d.title, '')), 'A') ||
 				setweight(c.tsv, 'B')
 			  ) @@ websearch_to_tsquery('simple', $2)
+			LIMIT $4
+		),
+		vector_hits AS (
+			SELECT
+				c.id::text,
+				c.document_id::text,
+				d.title,
+				c.chunk_index,
+				c.content,
+				row_number() OVER (
+					ORDER BY
+						cv.embedding <=> $3::vector ASC,
+						d.title ASC,
+						c.chunk_index ASC
+				) AS vector_rank
+			FROM chunk_vectors cv
+			INNER JOIN chunks c ON c.id = cv.chunk_id
+			INNER JOIN documents d ON d.id = c.document_id
+			WHERE d.knowledge_base_id = $1
+			LIMIT $4
+		),
+		combined AS (
+			SELECT
+				COALESCE(k.id, v.id) AS id,
+				COALESCE(k.document_id, v.document_id) AS document_id,
+				COALESCE(k.title, v.title) AS title,
+				COALESCE(k.chunk_index, v.chunk_index) AS chunk_index,
+				COALESCE(k.content, v.content) AS content,
+				k.keyword_rank,
+				v.vector_rank
+			FROM keyword_hits k
+			FULL OUTER JOIN vector_hits v ON v.id = k.id
 		)
 		SELECT
 			id,
@@ -263,13 +342,30 @@ func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question st
 			title,
 			chunk_index,
 			content,
-			score
-		FROM ranked_chunks
-		ORDER BY score DESC, title ASC, chunk_index ASC
-		LIMIT $3
+			(
+				COALESCE(1.0 / (60 + keyword_rank), 0) +
+				COALESCE(1.0 / (60 + vector_rank), 0)
+			) AS score,
+			(
+				COALESCE(1.0 / (3 + keyword_rank), 0) * 0.65 +
+				COALESCE(1.0 / (3 + vector_rank), 0) * 0.35
+			) AS quality_score,
+			CASE
+				WHEN keyword_rank IS NOT NULL AND vector_rank IS NOT NULL THEN 'hybrid'
+				WHEN keyword_rank IS NOT NULL THEN 'keyword'
+				WHEN vector_rank IS NOT NULL THEN 'vector'
+				ELSE 'unknown'
+			END AS retrieval_source
+		FROM combined
+		ORDER BY
+			quality_score DESC,
+			score DESC,
+			title ASC,
+			chunk_index ASC
+		LIMIT $4
 	`
 
-	rows, err := r.pool.Query(ctx, query, kbID, question, limit)
+	rows, err := r.pool.Query(ctx, query, kbID, question, vectorLiteral(questionEmbedding), limit)
 	if err != nil {
 		return nil, err
 	}
@@ -285,6 +381,8 @@ func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question st
 			&item.ChunkIndex,
 			&item.Content,
 			&item.Score,
+			&item.QualityScore,
+			&item.RetrievalSource,
 		); err != nil {
 			return nil, err
 		}
@@ -322,4 +420,17 @@ func (r *PostgresRepository) LogQuery(ctx context.Context, input domain.QueryLog
 		input.RetrievedChunkIDs,
 	)
 	return err
+}
+
+func vectorLiteral(embedding []float32) string {
+	if len(embedding) == 0 {
+		return "[]"
+	}
+
+	parts := make([]string, 0, len(embedding))
+	for _, value := range embedding {
+		parts = append(parts, strconv.FormatFloat(float64(value), 'f', 8, 32))
+	}
+
+	return "[" + strings.Join(parts, ",") + "]"
 }

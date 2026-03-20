@@ -2,6 +2,7 @@ package config
 
 import (
 	"os"
+	"strconv"
 	"time"
 )
 
@@ -16,6 +17,9 @@ type Config struct {
 	RedisAddr       string
 	RedisPassword   string
 	RedisDB         string
+	EmbeddingModel  string
+	EmbeddingDims   int
+	LLMModel        string
 }
 
 func Load() Config {
@@ -30,6 +34,9 @@ func Load() Config {
 		RedisAddr:       getEnv("REDIS_ADDR", "localhost:6379"),
 		RedisPassword:   getEnv("REDIS_PASSWORD", ""),
 		RedisDB:         getEnv("REDIS_DB", "0"),
+		EmbeddingModel:  getEnv("EMBEDDING_MODEL", "local-hash-v1"),
+		EmbeddingDims:   getIntEnv("EMBEDDING_DIMS", 1024),
+		LLMModel:        getEnv("LLM_MODEL", "local-extractive-v1"),
 	}
 }
 
@@ -46,6 +53,19 @@ func getDurationEnv(key string, fallback time.Duration) time.Duration {
 		return fallback
 	}
 	value, err := time.ParseDuration(raw)
+	if err != nil {
+		return fallback
+	}
+	return value
+}
+
+func getIntEnv(key string, fallback int) int {
+	raw := os.Getenv(key)
+	if raw == "" {
+		return fallback
+	}
+
+	value, err := strconv.Atoi(raw)
 	if err != nil {
 		return fallback
 	}

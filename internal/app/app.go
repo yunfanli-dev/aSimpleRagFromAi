@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/jackc/pgx/v5/pgxpool"
@@ -39,7 +40,10 @@ func Run() error {
 
 	repo := repository.NewPostgresRepository(pool)
 	embedder := embedding.NewHashProvider(cfg.EmbeddingModel, cfg.EmbeddingDims)
-	llmProvider := llm.NewExtractiveProvider(cfg.LLMModel)
+	llmProvider, err := buildLLMProvider(cfg)
+	if err != nil {
+		return err
+	}
 
 	handlers := Handlers{
 		Health:        handler.NewHealthHandler(service.NewHealthService()),
@@ -73,5 +77,30 @@ func Run() error {
 		ctx, cancel := context.WithTimeout(context.Background(), cfg.ShutdownTimeout)
 		defer cancel()
 		return server.Shutdown(ctx)
+	}
+}
+
+func buildLLMProvider(cfg config.Config) (llm.Provider, error) {
+	switch cfg.LLMProvider {
+	case "openai":
+		model := cfg.LLMModel
+		if strings.TrimSpace(model) == "" || strings.HasPrefix(model, "local-") {
+			model = "gpt-5-mini"
+		}
+		provider, err := llm.NewOpenAIProvider(
+			model,
+			cfg.OpenAIBaseURL,
+			cfg.OpenAIAPIKey,
+			cfg.LLMReasoningEffort,
+			cfg.LLMTimeout,
+		)
+		if err != nil {
+			return nil, err
+		}
+		return provider, nil
+	case "local", "":
+		return llm.NewExtractiveProvider(cfg.LLMModel), nil
+	default:
+		return nil, errors.New("unsupported LLM_PROVIDER: use 'local' or 'openai'")
 	}
 }

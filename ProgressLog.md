@@ -107,3 +107,10 @@
 - 当前：测试流程文档已可直接照着执行
 - 下一步：后续新增测试方法时持续更新该文件
 - 备注：已明确要求新测试方法必须同步写入 `test/README.md`
+
+### 2026-03-20 openai-llm
+
+- 完成：接入可切换的 OpenAI Responses API provider，并保留本地 LLM fallback
+- 当前：查询链路已可切到真实 OpenAI answer 生成
+- 下一步：接真实 rerank provider，并补 OpenAI 路径人工回归
+- 备注：`LLM_PROVIDER=openai` 时需配置 `OPENAI_API_KEY`

@@ -78,6 +78,15 @@ make migrate-local
 POSTGRES_DSN='postgres://postgres:postgres@localhost:5432/simplerag?sslmode=disable' go run ./cmd/api
 ```
 
+如果要走真实 OpenAI LLM provider，启动前追加：
+
+```bash
+export LLM_PROVIDER=openai
+export OPENAI_API_KEY=your_api_key
+export LLM_MODEL=gpt-5-mini
+export LLM_REASONING_EFFORT=low
+```
+
 默认监听：
 
 - API: `http://localhost:8080`
@@ -196,7 +205,7 @@ curl -X POST http://localhost:8080/api/v1/documents/$DOC_ID_2/reindex
 curl -X POST http://localhost:8080/api/v1/query/debug \
   -H 'Content-Type: application/json' \
   -d '{
-    "knowledge_base_id": "KB_ID",
+    "knowledge_base_id": "'"$KB_ID"'",
     "question": "what storage systems are required for the local demo"
   }'
 ```
@@ -231,7 +240,7 @@ curl -X POST http://localhost:8080/api/v1/query/debug \
 - reindex 向量写入
 - FTS + vector 混合召回
 - 本地轻量 rerank
-- 本地占位 LLM answer 生成
+- 本地占位或真实 OpenAI LLM answer 生成
 
 ## 后续要求
 

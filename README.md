@@ -48,3 +48,5 @@
 ## 项目文档
 
 完整规划与项目书见 [ProjectPlan.md](/home/ubuntu/aiCodingTest/aSimpleRagFromAi/aSimpleRagFromAi/ProjectPlan.md)。
+
+项目进度记录见 [ProgressLog.md](/home/ubuntu/aiCodingTest/aSimpleRagFromAi/aSimpleRagFromAi/ProgressLog.md)。

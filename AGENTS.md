@@ -8,18 +8,20 @@
 
 1. [README.md](./README.md)
 2. [ProgressLog.md](./ProgressLog.md)
+3. [Milestones.md](./Milestones.md)
 
 目标：
 
 - 先理解项目简略说明
 - 明确当前项目做到哪一步了
+- 明确当前项目处在哪个里程碑
 - 从当前进度继续，不重复做已经完成的内容
 
 ## 阅读升级规则
 
 如果仅通过 `README.md` 仍无法看明白项目目标、范围、架构或下一步方向，必须继续阅读：
 
-3. [ProjectPlan.md](./ProjectPlan.md)
+4. [ProjectPlan.md](./ProjectPlan.md)
 
 原则：
 
@@ -32,6 +34,8 @@
 - 默认从 `ProgressLog.md` 记录的“当前 / 下一步”继续推进
 - 每次只推进一个清晰的小阶段，避免一次改动过散
 - 完成一部分后，必须更新 [ProgressLog.md](./ProgressLog.md)
+- 每次改动项目后，必须检查并按需更新 [Milestones.md](./Milestones.md)
+- 每次新增、修改或确认一种可重复执行的测试方法后，必须检查并按需更新 [test/README.md](./test/README.md)
 - 更新进度时保持极简，只写：时间、完成、当前、下一步、备注
 - 如果涉及数据库结构变更，必须检查并按需更新 [docs/DatabaseSchema.md](./docs/DatabaseSchema.md)
 
@@ -41,6 +45,7 @@
 
 - 本次完成了什么
 - 当前处于什么阶段
+- 当前属于哪个里程碑
 - 接下来准备做什么
 - 是否有阻塞或验证限制
 
@@ -54,15 +59,21 @@
 
 1. 先看 `README.md`
 2. 再看 `ProgressLog.md`
-3. 看不明白再看 `ProjectPlan.md`
-4. 按当前进度继续
-5. 完成阶段性工作后更新 `ProgressLog.md`
-6. 如果改了数据库结构，同步检查 `docs/DatabaseSchema.md`
+3. 再看 `Milestones.md`
+4. 看不明白再看 `ProjectPlan.md`
+5. 按当前进度继续
+6. 完成阶段性工作后更新 `ProgressLog.md`
+7. 每次改动后检查 `Milestones.md` 是否需要更新
+8. 每次涉及测试流程、验证命令、排障步骤变化时检查 `test/README.md` 是否需要更新
+9. 如果改了数据库结构，同步检查 `docs/DatabaseSchema.md`
 
 ## 禁止事项
 
 - 不读取进度就直接开始大改
+- 不读取里程碑就直接开始大改
 - 忽略 `ProgressLog.md` 里的当前状态
+- 做完工作不检查 `Milestones.md` 是否需要更新
+- 做完测试相关改动不检查 `test/README.md` 是否需要更新
 - 做完工作不更新进度
 - 在 `README.md` 已足够清楚时无意义重复通读所有文档
 - 修改数据库结构但不检查数据库说明文档

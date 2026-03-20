@@ -121,3 +121,17 @@
 - 当前：查询链路已可切到真实 MiniMax answer 生成
 - 下一步：接真实 rerank provider，并补 MiniMax 路径人工回归
 - 备注：`LLM_PROVIDER=minimax` 时需配置 `MINIMAX_API_KEY`
+
+### 2026-03-20 milestone-file
+
+- 完成：新增 `Milestones.md`，并将里程碑检查规则固化到 `AGENTS.md`
+- 当前：项目进度与里程碑已双轨记录
+- 下一步：每次改动后同步检查 `ProgressLog.md`、`Milestones.md` 和相关说明文档
+- 备注：后续 session 启动时需先读 `Milestones.md`
+
+### 2026-03-20 test-readme-rule
+
+- 完成：将 `test/README.md` 的定期检查与更新要求固化到 `AGENTS.md`
+- 当前：测试流程文档维护规则已提升为仓库级约束
+- 下一步：后续所有测试流程变化都同步更新 `test/README.md`
+- 备注：新增测试方法、验证命令、排障步骤时都要检查该文件

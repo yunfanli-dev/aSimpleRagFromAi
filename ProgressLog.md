@@ -23,3 +23,17 @@
 - 当前：基础工程搭建中
 - 下一步：补充真实存储、迁移脚本、索引链路
 - 备注：本机未安装 Go，暂未本地编译验证
+
+### 2026-03-20 migration
+
+- 完成：补充 PostgreSQL/pgvector 初版 migration、索引与执行脚本
+- 当前：数据层初始化完成
+- 下一步：接入 pgx repository，替换内存存储
+- 备注：未执行数据库验证，当前仅完成 schema 落盘
+
+### 2026-03-20 local-env
+
+- 完成：安装 Go、Docker、Compose、psql，启动本地 Postgres/Redis，执行 migration
+- 当前：本地开发环境可用
+- 下一步：接入 pgx repository，替换内存存储
+- 备注：`go mod tidy` 已完成，修复骨架编译小问题后继续验证

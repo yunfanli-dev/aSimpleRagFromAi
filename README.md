@@ -45,6 +45,12 @@
 - 数据模型清晰，便于后续扩展多租户与多数据源
 - 每个阶段都有可验证的指标和测试
 
+## 当前工程状态
+
+- 已完成 Go 服务骨架
+- 已完成 PostgreSQL / pgvector 初版 migration
+- 下一步是接真实 repository 与数据库读写
+
 ## 项目文档
 
 完整规划与项目书见 [ProjectPlan.md](./ProjectPlan.md)。

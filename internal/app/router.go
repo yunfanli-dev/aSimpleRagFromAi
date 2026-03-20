@@ -1,9 +1,6 @@
 package app
 
-import (
-	"github.com/gin-gonic/gin"
-	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/handler"
-)
+import "github.com/gin-gonic/gin"
 
 func NewRouter(handlers Handlers) *gin.Engine {
 	router := gin.New()

@@ -49,7 +49,8 @@
 
 - 已完成 Go 服务骨架
 - 已完成 PostgreSQL / pgvector 初版 migration
-- 下一步是接真实 repository 与数据库读写
+- 已完成知识库 / 文档元数据的 PostgreSQL 基础接入
+- 下一步是文本切片与真实 chunks 入库
 
 ## 项目文档
 

@@ -1,18 +1,24 @@
 package service
 
 import (
+	"context"
+
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/domain"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/repository"
 )
 
 type DocumentService struct {
-	repo *repository.MemoryRepository
+	repo repository.DocumentRepository
 }
 
-func NewDocumentService(repo *repository.MemoryRepository) *DocumentService {
+func NewDocumentService(repo repository.DocumentRepository) *DocumentService {
 	return &DocumentService{repo: repo}
 }
 
-func (s *DocumentService) List(kbID string) []domain.Document {
-	return s.repo.ListDocuments(kbID)
+func (s *DocumentService) Create(ctx context.Context, input domain.CreateDocumentInput) (domain.Document, error) {
+	return s.repo.CreateDocument(ctx, input)
+}
+
+func (s *DocumentService) List(ctx context.Context, kbID string) ([]domain.Document, error) {
+	return s.repo.ListDocuments(ctx, kbID)
 }

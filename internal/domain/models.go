@@ -7,12 +7,25 @@ type KnowledgeBase struct {
 	Status      string `json:"status"`
 }
 
+type CreateKnowledgeBaseInput struct {
+	Name        string `json:"name" binding:"required"`
+	Description string `json:"description"`
+}
+
 type Document struct {
 	ID              string `json:"id"`
 	KnowledgeBaseID string `json:"knowledge_base_id"`
 	Title           string `json:"title"`
 	SourceType      string `json:"source_type"`
 	Status          string `json:"status"`
+}
+
+type CreateDocumentInput struct {
+	KnowledgeBaseID string `json:"knowledge_base_id"`
+	Title           string `json:"title" binding:"required"`
+	SourceType      string `json:"source_type" binding:"required"`
+	StoragePath     string `json:"storage_path"`
+	ContentHash     string `json:"content_hash" binding:"required"`
 }
 
 type QueryRequest struct {

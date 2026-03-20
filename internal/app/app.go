@@ -8,6 +8,7 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/jackc/pgx/v5/pgxpool"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/config"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/handler"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/observability"
@@ -24,7 +25,17 @@ type Handlers struct {
 
 func Run() error {
 	cfg := config.Load()
-	repo := repository.NewMemoryRepository()
+	pool, err := pgxpool.New(context.Background(), cfg.PostgresDSN)
+	if err != nil {
+		return err
+	}
+	defer pool.Close()
+
+	if err := pool.Ping(context.Background()); err != nil {
+		return err
+	}
+
+	repo := repository.NewPostgresRepository(pool)
 
 	handlers := Handlers{
 		Health:        handler.NewHealthHandler(service.NewHealthService()),

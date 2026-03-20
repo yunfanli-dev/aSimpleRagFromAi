@@ -11,7 +11,9 @@ func NewRouter(handlers Handlers) *gin.Engine {
 
 	v1 := router.Group("/api/v1")
 	{
+		v1.POST("/kbs", handlers.KnowledgeBase.Create)
 		v1.GET("/kbs", handlers.KnowledgeBase.List)
+		v1.GET("/kbs/:id", handlers.KnowledgeBase.Get)
 		v1.POST("/kbs/:id/documents", handlers.Document.Create)
 		v1.GET("/kbs/:id/documents", handlers.Document.List)
 		v1.POST("/documents/:id/reindex", handlers.Document.Reindex)

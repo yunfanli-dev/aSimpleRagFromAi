@@ -58,3 +58,10 @@
 - 当前：最小检索闭环已打通
 - 下一步：补文档详情 / chunk 查看接口，继续增强检索质量
 - 备注：当前答案仍是检索片段拼接，不含 LLM 生成
+
+### 2026-03-20 doc-read
+
+- 完成：补文档详情和 chunk 查看接口，便于调试 ingest 和检索
+- 当前：最小读写调试接口已齐
+- 下一步：增强检索排序与结果质量，再准备接 embedding
+- 备注：新增 `GET /api/v1/documents/:id` 和 `GET /api/v1/documents/:id/chunks`

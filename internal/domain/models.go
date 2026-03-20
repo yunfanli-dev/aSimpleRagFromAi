@@ -18,6 +18,8 @@ type Document struct {
 	Title           string `json:"title"`
 	SourceType      string `json:"source_type"`
 	Status          string `json:"status"`
+	StoragePath     string `json:"storage_path,omitempty"`
+	Content         string `json:"content,omitempty"`
 }
 
 type CreateDocumentInput struct {

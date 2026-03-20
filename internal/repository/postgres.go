@@ -169,6 +169,68 @@ func (r *PostgresRepository) ListDocuments(ctx context.Context, kbID string) ([]
 	return items, rows.Err()
 }
 
+func (r *PostgresRepository) GetDocument(ctx context.Context, id string) (domain.Document, error) {
+	const query = `
+		SELECT
+			id::text,
+			knowledge_base_id::text,
+			title,
+			source_type,
+			status,
+			storage_path,
+			content_text
+		FROM documents
+		WHERE id = $1
+	`
+
+	var doc domain.Document
+	err := r.pool.QueryRow(ctx, query, id).Scan(
+		&doc.ID,
+		&doc.KnowledgeBaseID,
+		&doc.Title,
+		&doc.SourceType,
+		&doc.Status,
+		&doc.StoragePath,
+		&doc.Content,
+	)
+	if errors.Is(err, pgx.ErrNoRows) {
+		return domain.Document{}, ErrNotFound
+	}
+	return doc, err
+}
+
+func (r *PostgresRepository) ListChunks(ctx context.Context, documentID string) ([]domain.Chunk, error) {
+	const query = `
+		SELECT id::text, document_id::text, chunk_index, content, token_count
+		FROM chunks
+		WHERE document_id = $1
+		ORDER BY chunk_index ASC
+	`
+
+	rows, err := r.pool.Query(ctx, query, documentID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	items := make([]domain.Chunk, 0)
+	for rows.Next() {
+		var chunk domain.Chunk
+		if err := rows.Scan(
+			&chunk.ID,
+			&chunk.DocumentID,
+			&chunk.ChunkIndex,
+			&chunk.Content,
+			&chunk.TokenCount,
+		); err != nil {
+			return nil, err
+		}
+		items = append(items, chunk)
+	}
+
+	return items, rows.Err()
+}
+
 func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question string, limit int) ([]domain.RetrievedChunk, error) {
 	const query = `
 		SELECT

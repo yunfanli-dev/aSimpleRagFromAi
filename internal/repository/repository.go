@@ -17,7 +17,9 @@ type KnowledgeBaseRepository interface {
 
 type DocumentRepository interface {
 	CreateDocumentWithChunks(ctx context.Context, input domain.CreateDocumentInput, chunks []domain.CreateChunkInput) (domain.Document, error)
+	GetDocument(ctx context.Context, id string) (domain.Document, error)
 	ListDocuments(ctx context.Context, kbID string) ([]domain.Document, error)
+	ListChunks(ctx context.Context, documentID string) ([]domain.Chunk, error)
 }
 
 type QueryRepository interface {

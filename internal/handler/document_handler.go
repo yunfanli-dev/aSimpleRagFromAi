@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/domain"
+	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/repository"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/service"
 	"github.com/yunfanli-dev/aSimpleRagFromAi/pkg/response"
 )
@@ -44,6 +45,30 @@ func (h *DocumentHandler) Create(c *gin.Context) {
 	}
 
 	response.JSON(c, http.StatusCreated, item)
+}
+
+func (h *DocumentHandler) Get(c *gin.Context) {
+	item, err := h.service.Get(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		if err == repository.ErrNotFound {
+			response.Error(c, http.StatusNotFound, "document not found")
+			return
+		}
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(c, http.StatusOK, item)
+}
+
+func (h *DocumentHandler) ListChunks(c *gin.Context) {
+	items, err := h.service.ListChunks(c.Request.Context(), c.Param("id"))
+	if err != nil {
+		response.Error(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	response.JSON(c, http.StatusOK, items)
 }
 
 func (h *DocumentHandler) Reindex(c *gin.Context) {

@@ -58,3 +58,11 @@ func (s *DocumentService) Create(ctx context.Context, input domain.CreateDocumen
 func (s *DocumentService) List(ctx context.Context, kbID string) ([]domain.Document, error) {
 	return s.repo.ListDocuments(ctx, kbID)
 }
+
+func (s *DocumentService) Get(ctx context.Context, id string) (domain.Document, error) {
+	return s.repo.GetDocument(ctx, id)
+}
+
+func (s *DocumentService) ListChunks(ctx context.Context, documentID string) ([]domain.Chunk, error) {
+	return s.repo.ListChunks(ctx, documentID)
+}

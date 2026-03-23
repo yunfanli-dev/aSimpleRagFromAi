@@ -7,6 +7,7 @@ import (
 	"github.com/yunfanli-dev/aSimpleRagFromAi/internal/domain"
 )
 
+// buildInstructions returns the system guidance shared by remote LLM providers.
 func buildInstructions() string {
 	return strings.Join([]string{
 		"You answer strictly from the retrieved context.",
@@ -16,6 +17,7 @@ func buildInstructions() string {
 	}, " ")
 }
 
+// buildInput formats the user question and retrieved chunks into one prompt payload.
 func buildInput(question string, chunks []domain.RetrievedChunk) string {
 	parts := make([]string, 0, len(chunks)+2)
 	parts = append(parts, "Question:\n"+question)

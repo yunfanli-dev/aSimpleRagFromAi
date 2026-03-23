@@ -2,6 +2,7 @@ package app
 
 import "github.com/gin-gonic/gin"
 
+// NewRouter wires HTTP routes to the configured handlers.
 func NewRouter(handlers Handlers) *gin.Engine {
 	router := gin.New()
 	router.Use(gin.Logger(), gin.Recovery())

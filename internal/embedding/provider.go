@@ -22,6 +22,7 @@ type HashProvider struct {
 	dimensions int
 }
 
+// NewHashProvider builds the deterministic local embedding provider.
 func NewHashProvider(model string, dimensions int) *HashProvider {
 	if strings.TrimSpace(model) == "" {
 		model = "local-hash-v1"
@@ -36,15 +37,19 @@ func NewHashProvider(model string, dimensions int) *HashProvider {
 	}
 }
 
+// Model returns the embedding model identifier.
 func (p *HashProvider) Model() string {
 	return p.model
 }
 
+// Dimensions returns the output vector dimension.
 func (p *HashProvider) Dimensions() int {
 	return p.dimensions
 }
 
+// Embed hashes normalized tokens into a deterministic dense vector.
 func (p *HashProvider) Embed(_ context.Context, text string) ([]float32, error) {
+	// TODO: keep this deterministic provider as a local baseline until a real embedding provider is added.
 	normalized := strings.Join(strings.Fields(text), " ")
 	if normalized == "" {
 		return nil, ErrEmptyInput
@@ -72,6 +77,7 @@ func (p *HashProvider) Embed(_ context.Context, text string) ([]float32, error) 
 	return vector, nil
 }
 
+// normalizeVector applies L2 normalization to the in-memory vector.
 func normalizeVector(vector []float32) {
 	var total float64
 	for _, value := range vector {

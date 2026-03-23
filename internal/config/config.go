@@ -26,6 +26,7 @@ type Config struct {
 	LLMTimeout      time.Duration
 }
 
+// Load reads process configuration from environment variables with defaults.
 func Load() Config {
 	return Config{
 		AppName:         getEnv("APP_NAME", "simplerag-go"),
@@ -48,6 +49,7 @@ func Load() Config {
 	}
 }
 
+// getEnv reads a string environment variable with fallback.
 func getEnv(key, fallback string) string {
 	if value := os.Getenv(key); value != "" {
 		return value
@@ -55,6 +57,7 @@ func getEnv(key, fallback string) string {
 	return fallback
 }
 
+// getDurationEnv reads a duration environment variable with fallback on parse failure.
 func getDurationEnv(key string, fallback time.Duration) time.Duration {
 	raw := os.Getenv(key)
 	if raw == "" {
@@ -67,6 +70,7 @@ func getDurationEnv(key string, fallback time.Duration) time.Duration {
 	return value
 }
 
+// getIntEnv reads an integer environment variable with fallback on parse failure.
 func getIntEnv(key string, fallback int) int {
 	raw := os.Getenv(key)
 	if raw == "" {

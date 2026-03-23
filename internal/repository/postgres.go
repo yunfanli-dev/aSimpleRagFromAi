@@ -15,10 +15,12 @@ type PostgresRepository struct {
 	pool *pgxpool.Pool
 }
 
+// NewPostgresRepository builds the PostgreSQL-backed repository implementation.
 func NewPostgresRepository(pool *pgxpool.Pool) *PostgresRepository {
 	return &PostgresRepository{pool: pool}
 }
 
+// CreateKnowledgeBase inserts one knowledge base row.
 func (r *PostgresRepository) CreateKnowledgeBase(ctx context.Context, input domain.CreateKnowledgeBaseInput) (domain.KnowledgeBase, error) {
 	const query = `
 		INSERT INTO knowledge_bases (name, description, status)
@@ -36,6 +38,7 @@ func (r *PostgresRepository) CreateKnowledgeBase(ctx context.Context, input doma
 	return kb, err
 }
 
+// GetKnowledgeBase fetches a knowledge base by ID.
 func (r *PostgresRepository) GetKnowledgeBase(ctx context.Context, id string) (domain.KnowledgeBase, error) {
 	const query = `
 		SELECT id::text, name, description, status
@@ -56,6 +59,7 @@ func (r *PostgresRepository) GetKnowledgeBase(ctx context.Context, id string) (d
 	return kb, err
 }
 
+// ListKnowledgeBases returns all knowledge bases in reverse creation order.
 func (r *PostgresRepository) ListKnowledgeBases(ctx context.Context) ([]domain.KnowledgeBase, error) {
 	const query = `
 		SELECT id::text, name, description, status
@@ -81,6 +85,7 @@ func (r *PostgresRepository) ListKnowledgeBases(ctx context.Context) ([]domain.K
 	return items, rows.Err()
 }
 
+// CreateDocumentWithChunks persists a document and all of its chunks in one transaction.
 func (r *PostgresRepository) CreateDocumentWithChunks(ctx context.Context, input domain.CreateDocumentInput, chunks []domain.CreateChunkInput) (domain.Document, error) {
 	tx, err := r.pool.BeginTx(ctx, pgx.TxOptions{})
 	if err != nil {
@@ -145,6 +150,7 @@ func (r *PostgresRepository) CreateDocumentWithChunks(ctx context.Context, input
 	return doc, nil
 }
 
+// ListDocuments returns documents for one knowledge base.
 func (r *PostgresRepository) ListDocuments(ctx context.Context, kbID string) ([]domain.Document, error) {
 	const query = `
 		SELECT id::text, knowledge_base_id::text, title, source_type, status
@@ -171,6 +177,7 @@ func (r *PostgresRepository) ListDocuments(ctx context.Context, kbID string) ([]
 	return items, rows.Err()
 }
 
+// GetDocument fetches one document and its stored source content.
 func (r *PostgresRepository) GetDocument(ctx context.Context, id string) (domain.Document, error) {
 	const query = `
 		SELECT
@@ -201,6 +208,7 @@ func (r *PostgresRepository) GetDocument(ctx context.Context, id string) (domain
 	return doc, err
 }
 
+// ListChunks returns stored chunks for one document in original order.
 func (r *PostgresRepository) ListChunks(ctx context.Context, documentID string) ([]domain.Chunk, error) {
 	const query = `
 		SELECT id::text, document_id::text, chunk_index, content, token_count
@@ -233,6 +241,7 @@ func (r *PostgresRepository) ListChunks(ctx context.Context, documentID string) 
 	return items, rows.Err()
 }
 
+// ListChunkEmbeddingsInput loads chunk text needed for embedding regeneration.
 func (r *PostgresRepository) ListChunkEmbeddingsInput(ctx context.Context, documentID string) ([]domain.ChunkEmbedding, error) {
 	const query = `
 		SELECT id::text, chunk_index, content
@@ -259,6 +268,7 @@ func (r *PostgresRepository) ListChunkEmbeddingsInput(ctx context.Context, docum
 	return items, rows.Err()
 }
 
+// UpsertChunkEmbedding inserts or refreshes a chunk embedding vector.
 func (r *PostgresRepository) UpsertChunkEmbedding(ctx context.Context, chunkID string, embedding []float32, model string) error {
 	const query = `
 		INSERT INTO chunk_vectors (chunk_id, embedding, embedding_model)
@@ -273,6 +283,7 @@ func (r *PostgresRepository) UpsertChunkEmbedding(ctx context.Context, chunkID s
 	return err
 }
 
+// SearchChunks runs hybrid keyword and vector retrieval for one query.
 func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question string, questionEmbedding []float32, limit int) ([]domain.RetrievedChunk, error) {
 	if limit <= 0 || question == "" {
 		return []domain.RetrievedChunk{}, nil
@@ -392,6 +403,7 @@ func (r *PostgresRepository) SearchChunks(ctx context.Context, kbID, question st
 	return items, rows.Err()
 }
 
+// LogQuery stores one query execution record for later debugging.
 func (r *PostgresRepository) LogQuery(ctx context.Context, input domain.QueryLogInput) error {
 	const query = `
 		INSERT INTO query_logs (
@@ -422,6 +434,7 @@ func (r *PostgresRepository) LogQuery(ctx context.Context, input domain.QueryLog
 	return err
 }
 
+// vectorLiteral converts a float slice into pgvector literal syntax.
 func vectorLiteral(embedding []float32) string {
 	if len(embedding) == 0 {
 		return "[]"

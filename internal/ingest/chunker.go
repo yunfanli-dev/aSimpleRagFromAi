@@ -11,6 +11,7 @@ const (
 	defaultChunkOverlap = 120
 )
 
+// NormalizeText collapses noisy whitespace while preserving paragraph breaks.
 func NormalizeText(input string) string {
 	lines := strings.Split(input, "\n")
 	blocks := make([]string, 0, len(lines))
@@ -30,6 +31,7 @@ func NormalizeText(input string) string {
 	return strings.TrimSpace(strings.Join(blocks, "\n"))
 }
 
+// SplitText slices normalized document text into overlapping chunks for storage.
 func SplitText(input string) []domain.CreateChunkInput {
 	normalized := NormalizeText(input)
 	if normalized == "" {
@@ -90,6 +92,7 @@ func SplitText(input string) []domain.CreateChunkInput {
 	return items
 }
 
+// tail returns the trailing substring used to build chunk overlap context.
 func tail(input string, size int) string {
 	if len(input) <= size {
 		return input

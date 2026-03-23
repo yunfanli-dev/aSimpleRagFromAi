@@ -14,10 +14,12 @@ type KnowledgeBaseHandler struct {
 	service *service.KnowledgeBaseService
 }
 
+// NewKnowledgeBaseHandler builds the HTTP handler for knowledge base operations.
 func NewKnowledgeBaseHandler(service *service.KnowledgeBaseService) *KnowledgeBaseHandler {
 	return &KnowledgeBaseHandler{service: service}
 }
 
+// Create creates one knowledge base from the request body.
 func (h *KnowledgeBaseHandler) Create(c *gin.Context) {
 	var input domain.CreateKnowledgeBaseInput
 	if err := c.ShouldBindJSON(&input); err != nil {
@@ -34,6 +36,7 @@ func (h *KnowledgeBaseHandler) Create(c *gin.Context) {
 	response.JSON(c, http.StatusCreated, item)
 }
 
+// Get returns one knowledge base by route ID.
 func (h *KnowledgeBaseHandler) Get(c *gin.Context) {
 	item, err := h.service.Get(c.Request.Context(), c.Param("id"))
 	if err != nil {
@@ -48,6 +51,7 @@ func (h *KnowledgeBaseHandler) Get(c *gin.Context) {
 	response.JSON(c, http.StatusOK, item)
 }
 
+// List returns all knowledge bases.
 func (h *KnowledgeBaseHandler) List(c *gin.Context) {
 	items, err := h.service.List(c.Request.Context())
 	if err != nil {

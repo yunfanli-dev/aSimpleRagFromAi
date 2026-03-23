@@ -23,6 +23,7 @@ type MiniMaxProvider struct {
 	client  *http.Client
 }
 
+// NewMiniMaxProvider validates config and builds a MiniMax-backed LLM provider.
 func NewMiniMaxProvider(model, baseURL, apiKey string, timeout time.Duration) (*MiniMaxProvider, error) {
 	if strings.TrimSpace(apiKey) == "" {
 		return nil, ErrMissingMiniMaxAPIKey
@@ -45,10 +46,12 @@ func NewMiniMaxProvider(model, baseURL, apiKey string, timeout time.Duration) (*
 	}, nil
 }
 
+// Model returns the provider model identifier used in responses.
 func (p *MiniMaxProvider) Model() string {
 	return p.model
 }
 
+// Generate sends retrieved context to MiniMax and returns the generated answer text.
 func (p *MiniMaxProvider) Generate(ctx context.Context, question string, chunks []domain.RetrievedChunk) (string, error) {
 	if len(chunks) == 0 {
 		return "I couldn't find relevant content in the current knowledge base.", nil

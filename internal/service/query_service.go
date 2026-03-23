@@ -24,10 +24,12 @@ type QueryService struct {
 	llm      llm.Provider
 }
 
+// NewQueryService wires retrieval, embedding, and generation dependencies.
 func NewQueryService(repo repository.QueryRepository, embedder embedding.Provider, llmProvider llm.Provider) *QueryService {
 	return &QueryService{repo: repo, embedder: embedder, llm: llmProvider}
 }
 
+// Ask executes retrieval, rerank, answer generation, and query logging for one request.
 func (s *QueryService) Ask(ctx context.Context, req domain.QueryRequest) (domain.QueryResponse, error) {
 	start := time.Now()
 	question := normalizeQuestion(req.Question)
@@ -77,6 +79,7 @@ func (s *QueryService) Ask(ctx context.Context, req domain.QueryRequest) (domain
 	return resp, nil
 }
 
+// buildCitations converts retrieved chunks into API citation payloads.
 func buildCitations(chunks []domain.RetrievedChunk) []domain.Citation {
 	items := make([]domain.Citation, 0, len(chunks))
 	for _, chunk := range chunks {
@@ -94,6 +97,7 @@ func buildCitations(chunks []domain.RetrievedChunk) []domain.Citation {
 	return items
 }
 
+// chunkIDs extracts chunk identifiers for query logging.
 func chunkIDs(chunks []domain.RetrievedChunk) []string {
 	items := make([]string, 0, len(chunks))
 	for _, chunk := range chunks {
@@ -102,10 +106,12 @@ func chunkIDs(chunks []domain.RetrievedChunk) []string {
 	return items
 }
 
+// normalizeQuestion collapses repeated whitespace in user input.
 func normalizeQuestion(question string) string {
 	return strings.Join(strings.Fields(question), " ")
 }
 
+// clipText trims long text for citation and prompt payloads.
 func clipText(text string, limit int) string {
 	trimmed := strings.TrimSpace(text)
 	if trimmed == "" {
@@ -120,6 +126,7 @@ func clipText(text string, limit int) string {
 	return strings.TrimSpace(string(runes[:limit])) + "..."
 }
 
+// embedQuestion skips empty questions and delegates to the embedding provider.
 func (s *QueryService) embedQuestion(ctx context.Context, question string) ([]float32, error) {
 	if question == "" {
 		return nil, nil
@@ -128,7 +135,9 @@ func (s *QueryService) embedQuestion(ctx context.Context, question string) ([]fl
 	return s.embedder.Embed(ctx, question)
 }
 
+// selectTopChunks applies rerank, de-duplication, and document diversity limits.
 func selectTopChunks(question string, chunks []domain.RetrievedChunk, limit int) []domain.RetrievedChunk {
+	// TODO: replace heuristic rerank and selection rules with a real rerank provider.
 	if len(chunks) == 0 || limit <= 0 {
 		return []domain.RetrievedChunk{}
 	}
@@ -164,6 +173,7 @@ func selectTopChunks(question string, chunks []domain.RetrievedChunk, limit int)
 	return selected
 }
 
+// hasNearbyChunk suppresses adjacent chunks from the same document in final citations.
 func hasNearbyChunk(selected []domain.RetrievedChunk, candidate domain.RetrievedChunk) bool {
 	for _, item := range selected {
 		if item.DocumentID != candidate.DocumentID {
@@ -180,6 +190,7 @@ func hasNearbyChunk(selected []domain.RetrievedChunk, candidate domain.Retrieved
 	return false
 }
 
+// min returns the smaller integer value.
 func min(a, b int) int {
 	if a < b {
 		return a

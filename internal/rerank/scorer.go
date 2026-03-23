@@ -12,7 +12,9 @@ type Candidate struct {
 	Score float64
 }
 
+// Rank applies the current lightweight heuristic rerank to retrieved chunks.
 func Rank(question string, chunks []domain.RetrievedChunk) []domain.RetrievedChunk {
+	// TODO: replace this heuristic scorer with a real rerank provider.
 	if len(chunks) == 0 {
 		return nil
 	}
@@ -51,6 +53,7 @@ func Rank(question string, chunks []domain.RetrievedChunk) []domain.RetrievedChu
 	return ranked
 }
 
+// tokenSet tokenizes text into a de-duplicated lowercase term set.
 func tokenSet(text string) map[string]struct{} {
 	parts := strings.Fields(strings.ToLower(text))
 	items := make(map[string]struct{}, len(parts))
@@ -64,6 +67,7 @@ func tokenSet(text string) map[string]struct{} {
 	return items
 }
 
+// lexicalOverlapScore measures how much text overlaps with query terms.
 func lexicalOverlapScore(queryTerms map[string]struct{}, text string) float64 {
 	if len(queryTerms) == 0 {
 		return 0
@@ -86,6 +90,7 @@ func lexicalOverlapScore(queryTerms map[string]struct{}, text string) float64 {
 	return float64(matches) / float64(len(queryTerms))
 }
 
+// sourceBonus gives small preference to hybrid hits over single-source hits.
 func sourceBonus(source string) float64 {
 	switch source {
 	case "hybrid":

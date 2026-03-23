@@ -26,6 +26,7 @@ type Handlers struct {
 	Query         *handler.QueryHandler
 }
 
+// Run boots dependencies, starts the HTTP server, and handles graceful shutdown.
 func Run() error {
 	cfg := config.Load()
 	pool, err := pgxpool.New(context.Background(), cfg.PostgresDSN)
@@ -80,6 +81,7 @@ func Run() error {
 	}
 }
 
+// buildLLMProvider selects the configured LLM provider implementation.
 func buildLLMProvider(cfg config.Config) (llm.Provider, error) {
 	switch cfg.LLMProvider {
 	case "minimax":
